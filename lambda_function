@@ -1,0 +1,43 @@
+import json
+import boto3
+
+dynamodb = boto3.client('dynamodb')
+table_name = 'table_name'
+
+def lambda_handler(event, context):
+    try:
+        body = json.loads(event['body']) if 'body' in event else event
+        
+        name = body.get('name', '')
+        email = body.get('email', '')
+        mobile = body.get('mobile', '')
+        score = body.get('score', '0')
+
+        if not name or not email or not mobile:
+            return {
+                "statusCode": 400,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"error": "Missing required fields"})
+            }
+
+        dynamodb.put_item(
+            TableName=table_name,
+            Item={
+                'id': {'S': email},
+                'name': {'S': name},
+                'mobile': {'S': mobile},
+                'score': {'N': str(score)}
+            }
+        )
+
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Data stored successfully!"})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": str(e)})
+        }
